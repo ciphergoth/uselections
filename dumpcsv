@@ -24,15 +24,26 @@ def csv_dict(p, conversions={}): # conversions is never modified
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('csv', nargs='*', type=pathlib.Path)
+    parser.add_argument('--query', action='append')
     return parser.parse_args()
+
+def meets_query(query, d):
+    if query is None:
+        return True
+    for q in query:
+        k, v = q.split("=", 1)
+        if d[k] != v:
+            return False
+    return True
 
 def main():
     args = parse_args()
     for path in args.csv:
         for d in csv_dict(path):
-            for k, v in d.items():
-                print(f"{k:>30}: {v}")
-            print()
+            if meets_query(args.query, d):
+                for k, v in d.items():
+                    print(f"{k:>30}: {v}")
+                print()
 
 if __name__ == "__main__":
     main()
