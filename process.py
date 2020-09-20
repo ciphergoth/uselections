@@ -6,6 +6,8 @@ import pathlib
 
 topdir = pathlib.Path(__file__).parent
 
+import matplotlib.pyplot as plt
+
 def identity(x):
     return x
 
@@ -34,17 +36,22 @@ def main():
         if entry['fec'] is None or entry['fec']['receipts'] < d['receipts']:
             entry['fec'] = d
     for d in csv_dict(args.data / "election-forecasts-2020" / "senate_state_toplines_2020.csv", {'winner_Dparty': float}):
+        if d['expression'] != '_deluxe':
+            continue
         state = d['district'][:2]
         entry = statedict.setdefault(state, {'fec': None, '538': None})
         if entry['538'] is None:
             entry['538'] = d
-    with open("/tmp/out.csv", "w") as f:
-        w = csv.writer(f)
-        w.writerow(['state', 'receipts', 'winner_Dparty'])
-        for k, v in statedict.items():
-            if v['538'] is not None:
-                w.writerow([k, v['fec']['receipts'], v['538']['winner_Dparty']])
-                #print(f"{k} {v['fec']['receipts']:13.2f} {v['538']['winner_Dparty']:7.5f} {v['538']['mean_predicted_turnout']} {v['fec']['name']} ")
+    fig = plt.figure()
+    ax = fig.add_subplot(1,1,1)
+    ax.autoscale(False)
+    ax.set_xbound([0, 1])
+    ax.set_ybound([0, 70])
+    for k, v in statedict.items():
+        if v['538'] is not None:
+            ax.text(v['538']['winner_Dparty'], v['fec']['receipts']/1E6, k,
+                ha="center", va="center")
+    plt.show()
 
 if __name__ == "__main__":
     main()
