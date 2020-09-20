@@ -1,25 +1,13 @@
 #!/usr/bin/env python3
 
 import argparse
-import csv
 import pathlib
-
-topdir = pathlib.Path(__file__).parent
 
 import matplotlib.pyplot as plt
 
-def identity(x):
-    return x
+topdir = pathlib.Path(__file__).parent
 
-def csv_dict(p, conversions={}): # conversions is never modified
-    with p.open() as f:
-        r = csv.reader(f)
-        headings = None
-        for row in r:
-            if headings is None:
-                headings = row
-            else:
-                yield {k: conversions.get(k, identity)(v) for k, v in zip(headings, row)}
+import csvdict
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -39,7 +27,7 @@ def meets_query(query, d):
 def main():
     args = parse_args()
     for path in args.csv:
-        for d in csv_dict(path):
+        for d in csvdict.csv_dict(path):
             if meets_query(args.query, d):
                 for k, v in d.items():
                     print(f"{k:>30}: {v}")
