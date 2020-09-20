@@ -29,7 +29,9 @@ def parse_args():
 def main():
     args = parse_args()
     statedict = {}
+    maxreceipts = 0
     for d in csv_dict(args.data / "totals-2020-09-20T07_40_42.csv", {'receipts': float}):
+        maxreceipts = max(maxreceipts, d['receipts'])
         if d['party'] == "REP":
             continue
         entry = statedict.setdefault(d['state'], {'fec': None, '538': None})
@@ -46,7 +48,10 @@ def main():
     ax = fig.add_subplot(1,1,1)
     ax.autoscale(False)
     ax.set_xbound([0, 1])
-    ax.set_ybound([0, 70])
+    ax.set_ybound([0, 1.1 * maxreceipts/1E6])
+    ax.set_title("Senate seats, neglectedness and tractability")
+    ax.set_xlabel("538 deluxe model probability of winning seat")
+    ax.set_ylabel("FEC receipts by top non-GOP candidate")
     for k, v in statedict.items():
         if v['538'] is not None:
             ax.text(v['538']['winner_Dparty'], v['fec']['receipts']/1E6, k,
