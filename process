@@ -9,6 +9,18 @@ import matplotlib.pyplot as plt
 
 import csvdict
 
+incumbents_rev = {
+    "red": "ME IA NC MT LA CO GA AZ KS SC AK TX KY MS ID OK SD NE WV AR TN WY",
+    "blue": "AL MI MN NM NH VA IL NJ OR DE MA RI"
+}
+
+incumbents = {}
+for k, v in incumbents_rev.items():
+    for vv in v.split():
+        if vv in incumbents:
+            raise Exception("ow")
+        incumbents[vv] = k
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=pathlib.Path, default=(topdir / "data"))
@@ -25,10 +37,10 @@ def main():
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     ax.autoscale(False)
-    ax.set_xbound([0, 1])
+    ax.set_xbound([-0.05, 1.05])
     ax.set_ybound([0, 1.1 * max(receipts.values())/1E6])
     ax.set_title("Senate seats, neglectedness and tractability")
-    ax.set_xlabel("538 deluxe model probability of winning seat")
+    ax.set_xlabel("538 Dem probability (deluxe model)")
     ax.set_ylabel("FEC receipts by top non-GOP candidate ($M)")
     done = set()
     for d in csvdict.csv_dict(args.data / "election-forecasts-2020" / "senate_state_toplines_2020.csv", {'winner_Dparty': float}):
@@ -39,7 +51,7 @@ def main():
         done.add(d['district'])
         state = d['district'][:2]
         ax.text(d['winner_Dparty'], receipts[state]/1E6, state,
-            ha="center", va="center")
+            ha="center", va="center", color=incumbents[state])
     plt.show()
 
 if __name__ == "__main__":
