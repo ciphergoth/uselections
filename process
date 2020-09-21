@@ -28,9 +28,7 @@ def parse_args():
     parser.add_argument('--data', type=pathlib.Path, default=(topdir / "data"))
     return parser.parse_args()
 
-def main():
-    args = parse_args()
-    session = requests_cache.core.CachedSession()
+def get_receipts(args, session):
     receipts = {}
     with (args.data / "totals-2020-09-20T07_40_42.csv").open() as f:
         r = csv.DictReader(f)
@@ -40,6 +38,9 @@ def main():
                 continue
             state = d['state']
             receipts[state] = max(receipts.get(state, 0), d['receipts'])
+    return receipts
+
+def plot(session, receipts):
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     ax.autoscale(False)
@@ -66,6 +67,12 @@ def main():
             state = district[:2]
             ax.text(rprob, receipts[state]/1E6, state,
                 ha="center", va="center", color=incumbents[state])
+
+def main():
+    args = parse_args()
+    session = requests_cache.core.CachedSession()
+    receipts = get_receipts(args, session)
+    plot(session, receipts)
     #plt.savefig("/tmp/senate.png", dpi=300, backend='agg')
     plt.show()
 
