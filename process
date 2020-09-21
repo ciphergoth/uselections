@@ -32,7 +32,7 @@ def fec_fetch(session, url, params):
         #with open(f"/tmp/fec_{page:03}.json", "w") as f:
         #    json.dump(d, f, indent=4)
         yield from d['results']
-        if page >= int(d['pagination']['pages']):
+        if page >= d['pagination']['pages']:
             break
 
 def fec_totals(session):
@@ -51,7 +51,7 @@ def get_receipts(session):
         if d['party'] == "REP":
             continue
         state = d['state']
-        receipts[state] = max(receipts.get(state, 0), float(d['receipts']))
+        receipts[state] = max(receipts.get(state, 0), d['receipts'])
     return receipts
 
 def senate_toplines_deluxe(session):
