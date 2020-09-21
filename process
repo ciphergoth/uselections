@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import csv
 import pathlib
 
 topdir = pathlib.Path(__file__).parent
 
 import matplotlib.pyplot as plt
-
-import csvdict
 
 incumbents_rev = {
     "red": "ME IA NC MT LA CO GA AZ KS SC AK TX KY MS ID OK SD NE WV AR TN WY",
@@ -29,11 +28,14 @@ def parse_args():
 def main():
     args = parse_args()
     receipts = {}
-    for d in csvdict.csv_dict(args.data / "totals-2020-09-20T07_40_42.csv", {'receipts': float}):
-        if d['party'] == "REP":
-            continue
-        state = d['state']
-        receipts[state] = max(receipts.get(state, 0), d['receipts'])
+    with (args.data / "totals-2020-09-20T07_40_42.csv").open() as f:
+        r = csv.DictReader(f)
+        for d in r:
+            d['receipts'] = float(d['receipts'])
+            if d['party'] == "REP":
+                continue
+            state = d['state']
+            receipts[state] = max(receipts.get(state, 0), d['receipts'])
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     ax.autoscale(False)
@@ -43,19 +45,22 @@ def main():
     ax.set_xlabel("538 GOP probability (deluxe model)")
     ax.set_ylabel("FEC receipts by top non-GOP candidate ($M)")
     done = set()
-    for d in csvdict.csv_dict(args.data / "election-forecasts-2020" / "senate_state_toplines_2020.csv", {'winner_Rparty': float}):
-        if d['expression'] != '_deluxe':
-            continue
-        district = d['district']
-        if district in done:
-            continue
-        done.add(district)
-        rprob = d['winner_Rparty']
-        if abs(rprob - 0.50) > 0.49:
-            continue
-        state = district[:2]
-        ax.text(rprob, receipts[state]/1E6, state,
-            ha="center", va="center", color=incumbents[state])
+    with (args.data / "election-forecasts-2020" / "senate_state_toplines_2020.csv").open() as f:
+        r = csv.DictReader(f)
+        for d in r:
+            d['winner_Rparty'] = float(d['winner_Rparty'])
+            if d['expression'] != '_deluxe':
+                continue
+            district = d['district']
+            if district in done:
+                continue
+            done.add(district)
+            rprob = d['winner_Rparty']
+            if abs(rprob - 0.50) > 0.49:
+                continue
+            state = district[:2]
+            ax.text(rprob, receipts[state]/1E6, state,
+                ha="center", va="center", color=incumbents[state])
     #plt.savefig("/tmp/senate.png", dpi=300, backend='agg')
     plt.show()
 
