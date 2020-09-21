@@ -95,7 +95,7 @@ def parse_args():
 
 def main():
     #args = parse_args()
-    session = requests_cache.core.CachedSession()
+    session = requests_cache.core.CachedSession(expire_after=86400)
     plot(session)
     plt.savefig("/tmp/senate.png", dpi=300, backend='agg')
     plt.show()
