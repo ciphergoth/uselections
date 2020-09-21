@@ -27,7 +27,6 @@ for k, v in incumbents_rev.items():
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', type=pathlib.Path, default=(topdir / "data"))
     return parser.parse_args()
 
 def fec_fetch(session, url, params):
@@ -41,8 +40,9 @@ def fec_fetch(session, url, params):
         if page >= int(d['pagination']['pages']):
             break
 
-def test_fec(session):
-    for c in fec_fetch(session, "https://api.open.fec.gov/v1/candidates/totals/", {
+def get_receipts(args, session):
+    receipts = {}
+    for d in fec_fetch(session, "https://api.open.fec.gov/v1/candidates/totals/", {
         'has_raised_funds': 'true',
         'api_key': 'DEMO_KEY',
         'office': 'S',
@@ -50,19 +50,10 @@ def test_fec(session):
         'election_full': 'true',
         'election_year': '2020',
     }):
-        print(c['name'])
-
-
-def get_receipts(args, session):
-    receipts = {}
-    with (args.data / "totals-2020-09-20T07_40_42.csv").open() as f:
-        r = csv.DictReader(f)
-        for d in r:
-            d['receipts'] = float(d['receipts'])
-            if d['party'] == "REP":
-                continue
-            state = d['state']
-            receipts[state] = max(receipts.get(state, 0), d['receipts'])
+        if d['party'] == "REP":
+            continue
+        state = d['state']
+        receipts[state] = max(receipts.get(state, 0), float(d['receipts']))
     return receipts
 
 def plot(session, receipts):
@@ -96,11 +87,10 @@ def plot(session, receipts):
 def main():
     args = parse_args()
     session = requests_cache.core.CachedSession()
-    test_fec(session)
-    #receipts = get_receipts(args, session)
-    #plot(session, receipts)
+    receipts = get_receipts(args, session)
+    plot(session, receipts)
     #plt.savefig("/tmp/senate.png", dpi=300, backend='agg')
-    #plt.show()
+    plt.show()
 
 if __name__ == "__main__":
     main()
