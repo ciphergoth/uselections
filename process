@@ -2,10 +2,8 @@
 
 import argparse
 import codecs
-import contextlib
 import csv
 import itertools
-import json
 import pathlib
 
 topdir = pathlib.Path(__file__).parent
