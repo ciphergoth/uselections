@@ -40,18 +40,23 @@ def main():
     ax.set_xbound([-0.05, 1.05])
     ax.set_ybound([0, 1.1 * max(receipts.values())/1E6])
     ax.set_title("Senate seats, neglectedness and tractability")
-    ax.set_xlabel("538 Dem probability (deluxe model)")
+    ax.set_xlabel("538 GOP probability (deluxe model)")
     ax.set_ylabel("FEC receipts by top non-GOP candidate ($M)")
     done = set()
-    for d in csvdict.csv_dict(args.data / "election-forecasts-2020" / "senate_state_toplines_2020.csv", {'winner_Dparty': float}):
+    for d in csvdict.csv_dict(args.data / "election-forecasts-2020" / "senate_state_toplines_2020.csv", {'winner_Rparty': float}):
         if d['expression'] != '_deluxe':
             continue
-        if d['district'] in done:
+        district = d['district']
+        if district in done:
             continue
-        done.add(d['district'])
-        state = d['district'][:2]
-        ax.text(d['winner_Dparty'], receipts[state]/1E6, state,
+        done.add(district)
+        rprob = d['winner_Rparty']
+        if abs(rprob - 0.50) > 0.49:
+            continue
+        state = district[:2]
+        ax.text(rprob, receipts[state]/1E6, state,
             ha="center", va="center", color=incumbents[state])
+    #plt.savefig("/tmp/senate.png", dpi=300, backend='agg')
     plt.show()
 
 if __name__ == "__main__":
