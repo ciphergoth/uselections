@@ -13,9 +13,18 @@ topdir = pathlib.Path(__file__).parent
 import matplotlib.pyplot as plt
 import requests_cache
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    return parser.parse_args()
+def get_incumbents():
+    incumbents_rev = {
+        "red": "ME IA NC MT LA CO GA AZ KS SC AK TX KY MS ID OK SD NE WV AR TN WY",
+        "blue": "AL MI MN NM NH VA IL NJ OR DE MA RI"
+    }
+    incumbents = {}
+    for k, v in incumbents_rev.items():
+        for vv in v.split():
+            if vv in incumbents:
+                raise Exception("ow")
+            incumbents[vv] = k
+    return incumbents
 
 def fec_fetch(session, url, params):
     for page in itertools.count(start=1):
@@ -61,19 +70,6 @@ def senate_toplines_deluxe(session):
             done.add(district)
             yield d
 
-def get_incumbents():
-    incumbents_rev = {
-        "red": "ME IA NC MT LA CO GA AZ KS SC AK TX KY MS ID OK SD NE WV AR TN WY",
-        "blue": "AL MI MN NM NH VA IL NJ OR DE MA RI"
-    }
-    incumbents = {}
-    for k, v in incumbents_rev.items():
-        for vv in v.split():
-            if vv in incumbents:
-                raise Exception("ow")
-            incumbents[vv] = k
-    return incumbents
-
 def plot(session):
     incumbents = get_incumbents()
     receipts = get_receipts(session)
@@ -93,8 +89,12 @@ def plot(session):
         ax.text(rprob, receipts[state]/1E6, state,
             ha="center", va="center", color=incumbents[state])
 
+def parse_args():
+    parser = argparse.ArgumentParser()
+    return parser.parse_args()
+
 def main():
-    args = parse_args()
+    #args = parse_args()
     session = requests_cache.core.CachedSession()
     plot(session)
     plt.savefig("/tmp/senate.png", dpi=300, backend='agg')
