@@ -91,14 +91,17 @@ def plot(session):
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--outfile", type=pathlib.Path)
     return parser.parse_args()
 
 def main():
-    #args = parse_args()
+    args = parse_args()
     session = requests_cache.core.CachedSession(expire_after=86400)
     plot(session)
-    plt.savefig("/tmp/senate.png", dpi=300, backend='agg')
-    plt.show()
+    if args.outfile is not None:
+        plt.savefig(str(args.outfile), dpi=300, backend='agg')
+    else:
+        plt.show()
 
 if __name__ == "__main__":
     main()
