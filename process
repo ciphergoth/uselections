@@ -4,6 +4,8 @@ import argparse
 import codecs
 import contextlib
 import csv
+import itertools
+import json
 import pathlib
 
 topdir = pathlib.Path(__file__).parent
@@ -28,24 +30,27 @@ def parse_args():
     parser.add_argument('--data', type=pathlib.Path, default=(topdir / "data"))
     return parser.parse_args()
 
+def fec_fetch(session, url, params):
+    for page in itertools.count(start=1):
+        r = session.get(url, params=dict(page=str(page), **params))
+        r.raise_for_status()
+        d = r.json()
+        with open(f"/tmp/fec_{page:03}.json", "w") as f:
+            json.dump(d, f, indent=4)
+        yield from d['results']
+        if page >= int(d['pagination']['pages']):
+            break
+
 def test_fec(session):
-    url = "https://api.open.fec.gov/v1/candidates/totals/"
-    r = session.get(url, params={
+    for c in fec_fetch(session, "https://api.open.fec.gov/v1/candidates/totals/", {
         'has_raised_funds': 'true',
-        'per_page': '60',
         'api_key': 'DEMO_KEY',
         'office': 'S',
         'is_active_candidate': 'true',
         'election_full': 'true',
         'election_year': '2020',
-        #'sort_null_only': 'false',
-        #'sort_nulls_last': 'false',
-        #'sort_hide_null': 'false',
-        'page': '1',
-    })
-    r.raise_for_status()
-    d = r.json()
-    print(d)
+    }):
+        print(c['name'])
 
 
 def get_receipts(args, session):
