@@ -40,23 +40,40 @@ def fec_fetch(session, url, params):
         if page >= int(d['pagination']['pages']):
             break
 
-def get_receipts(args, session):
-    receipts = {}
-    for d in fec_fetch(session, "https://api.open.fec.gov/v1/candidates/totals/", {
+def fec_totals(session):
+    yield from fec_fetch(session, "https://api.open.fec.gov/v1/candidates/totals/", {
         'has_raised_funds': 'true',
         'api_key': 'DEMO_KEY',
         'office': 'S',
         'is_active_candidate': 'true',
         'election_full': 'true',
         'election_year': '2020',
-    }):
+    })
+
+def get_receipts(session):
+    receipts = {}
+    for d in fec_totals(session):
         if d['party'] == "REP":
             continue
         state = d['state']
         receipts[state] = max(receipts.get(state, 0), float(d['receipts']))
     return receipts
 
-def plot(session, receipts):
+def senate_toplines_deluxe(session):
+    url = "https://projects.fivethirtyeight.com/2020-general-data/senate_state_toplines_2020.csv"
+    with contextlib.closing(session.get(url, stream=True)) as f:
+        done = set()
+        for d in csv.DictReader(codecs.iterdecode(f.iter_lines(), 'utf-8')):
+            if d['expression'] != '_deluxe':
+                continue
+            district = d['district']
+            if district in done:
+                continue
+            done.add(district)
+            yield d
+
+def plot(session):
+    receipts = get_receipts(session)
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     ax.autoscale(False)
@@ -65,30 +82,18 @@ def plot(session, receipts):
     ax.set_title("Senate seats, neglectedness and tractability")
     ax.set_xlabel("538 GOP probability (deluxe model)")
     ax.set_ylabel("FEC receipts by top non-GOP candidate ($M)")
-    done = set()
-    url = "https://projects.fivethirtyeight.com/2020-general-data/senate_state_toplines_2020.csv"
-    with contextlib.closing(session.get(url, stream=True)) as f:
-        r = csv.DictReader(codecs.iterdecode(f.iter_lines(), 'utf-8'))
-        for d in r:
-            d['winner_Rparty'] = float(d['winner_Rparty'])
-            if d['expression'] != '_deluxe':
-                continue
-            district = d['district']
-            if district in done:
-                continue
-            done.add(district)
-            rprob = d['winner_Rparty']
-            if abs(rprob - 0.50) > 0.49:
-                continue
-            state = district[:2]
-            ax.text(rprob, receipts[state]/1E6, state,
-                ha="center", va="center", color=incumbents[state])
+    for d in senate_toplines_deluxe(session):
+        rprob = float(d['winner_Rparty'])
+        if abs(rprob - 0.50) > 0.49:
+            continue
+        state = d['district'][:2]
+        ax.text(rprob, receipts[state]/1E6, state,
+            ha="center", va="center", color=incumbents[state])
 
 def main():
     args = parse_args()
     session = requests_cache.core.CachedSession()
-    receipts = get_receipts(args, session)
-    plot(session, receipts)
+    plot(session)
     #plt.savefig("/tmp/senate.png", dpi=300, backend='agg')
     plt.show()
 
