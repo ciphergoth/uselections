@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
 import argparse
+import codecs
+import contextlib
 import csv
 import pathlib
 
 topdir = pathlib.Path(__file__).parent
 
 import matplotlib.pyplot as plt
+import requests_cache
 
 incumbents_rev = {
     "red": "ME IA NC MT LA CO GA AZ KS SC AK TX KY MS ID OK SD NE WV AR TN WY",
@@ -27,6 +30,7 @@ def parse_args():
 
 def main():
     args = parse_args()
+    session = requests_cache.core.CachedSession()
     receipts = {}
     with (args.data / "totals-2020-09-20T07_40_42.csv").open() as f:
         r = csv.DictReader(f)
@@ -45,8 +49,9 @@ def main():
     ax.set_xlabel("538 GOP probability (deluxe model)")
     ax.set_ylabel("FEC receipts by top non-GOP candidate ($M)")
     done = set()
-    with (args.data / "election-forecasts-2020" / "senate_state_toplines_2020.csv").open() as f:
-        r = csv.DictReader(f)
+    url = "https://projects.fivethirtyeight.com/2020-general-data/senate_state_toplines_2020.csv"
+    with contextlib.closing(session.get(url, stream=True)) as f:
+        r = csv.DictReader(codecs.iterdecode(f.iter_lines(), 'utf-8'))
         for d in r:
             d['winner_Rparty'] = float(d['winner_Rparty'])
             if d['expression'] != '_deluxe':
