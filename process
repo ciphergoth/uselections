@@ -28,6 +28,26 @@ def parse_args():
     parser.add_argument('--data', type=pathlib.Path, default=(topdir / "data"))
     return parser.parse_args()
 
+def test_fec(session):
+    url = "https://api.open.fec.gov/v1/candidates/totals/"
+    r = session.get(url, params={
+        'has_raised_funds': 'true',
+        'per_page': '60',
+        'api_key': 'DEMO_KEY',
+        'office': 'S',
+        'is_active_candidate': 'true',
+        'election_full': 'true',
+        'election_year': '2020',
+        #'sort_null_only': 'false',
+        #'sort_nulls_last': 'false',
+        #'sort_hide_null': 'false',
+        'page': '1',
+    })
+    r.raise_for_status()
+    d = r.json()
+    print(d)
+
+
 def get_receipts(args, session):
     receipts = {}
     with (args.data / "totals-2020-09-20T07_40_42.csv").open() as f:
@@ -71,10 +91,11 @@ def plot(session, receipts):
 def main():
     args = parse_args()
     session = requests_cache.core.CachedSession()
-    receipts = get_receipts(args, session)
-    plot(session, receipts)
+    test_fec(session)
+    #receipts = get_receipts(args, session)
+    #plot(session, receipts)
     #plt.savefig("/tmp/senate.png", dpi=300, backend='agg')
-    plt.show()
+    #plt.show()
 
 if __name__ == "__main__":
     main()
