@@ -1,3 +1,4 @@
 scratch
 __pycache__
 cache.sqlite
+config.toml

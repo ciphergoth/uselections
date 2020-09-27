@@ -3,13 +3,17 @@
 import argparse
 import codecs
 import csv
+import dataclasses
 import itertools
-import pathlib
-
-topdir = pathlib.Path(__file__).parent
 
 import matplotlib.pyplot as plt
 import requests_cache
+import toml
+
+@dataclasses.dataclass
+class Context:
+    config: dict
+    session: requests_cache.core.CachedSession
 
 def get_incumbents():
     incumbents_rev = {
@@ -24,9 +28,13 @@ def get_incumbents():
             incumbents[vv] = k
     return incumbents
 
-def fec_fetch(session, url, params):
+def fec_fetch(ctx, url, params):
     for page in itertools.count(start=1):
-        r = session.get(url, params=dict(page=str(page), **params))
+        rp = params.copy()
+        rp['api_key'] = ctx.config['fec']['api_key']
+        rp['per_page'] = "100"
+        rp['page'] = str(page)
+        r = ctx.session.get(url, params=rp)
         r.raise_for_status()
         d = r.json()
         #with open(f"/tmp/fec_{page:03}.json", "w") as f:
@@ -35,28 +43,28 @@ def fec_fetch(session, url, params):
         if page >= d['pagination']['pages']:
             break
 
-def fec_totals(session):
-    yield from fec_fetch(session, "https://api.open.fec.gov/v1/candidates/totals/", {
+def fec_totals(ctx):
+    yield from fec_fetch(ctx, "https://api.open.fec.gov/v1/candidates/totals/", {
         'has_raised_funds': 'true',
-        'api_key': 'DEMO_KEY',
         'office': 'S',
         'is_active_candidate': 'true',
         'election_full': 'true',
         'election_year': '2020',
+        'sort': 'candidate_id',
     })
 
-def get_receipts(session):
+def get_receipts(ctx):
     receipts = {}
-    for d in fec_totals(session):
+    for d in fec_totals(ctx):
         if d['party'] == "REP":
             continue
         state = d['state']
         receipts[state] = max(receipts.get(state, 0), d['receipts'])
     return receipts
 
-def senate_toplines_deluxe(session):
+def senate_toplines_deluxe(ctx):
     url = "https://projects.fivethirtyeight.com/2020-general-data/senate_state_toplines_2020.csv"
-    with session.get(url, stream=True) as r:
+    with ctx.session.get(url, stream=True) as r:
         r.raise_for_status()
         done = set()
         for d in csv.DictReader(codecs.iterdecode(r.iter_lines(), 'utf-8')):
@@ -68,9 +76,9 @@ def senate_toplines_deluxe(session):
             done.add(district)
             yield d
 
-def plot(session):
+def plot(ctx):
     incumbents = get_incumbents()
-    receipts = get_receipts(session)
+    receipts = get_receipts(ctx)
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     ax.autoscale(False)
@@ -79,7 +87,7 @@ def plot(session):
     ax.set_title("Senate seats, neglectedness and tractability")
     ax.set_xlabel("538 GOP probability (deluxe model)")
     ax.set_ylabel("FEC receipts by top non-GOP candidate ($M)")
-    for d in senate_toplines_deluxe(session):
+    for d in senate_toplines_deluxe(ctx):
         rprob = float(d['winner_Rparty'])
         if abs(rprob - 0.50) > 0.49:
             continue
@@ -89,15 +97,18 @@ def plot(session):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--outfile", type=pathlib.Path)
+    parser.add_argument("--outfile")
     return parser.parse_args()
 
 def main():
     args = parse_args()
+    with open("config.toml") as f:
+        config = toml.load(f)
     session = requests_cache.core.CachedSession(expire_after=86400)
-    plot(session)
+    ctx = Context(session = session, config = config)
+    plot(ctx)
     if args.outfile is not None:
-        plt.savefig(str(args.outfile), dpi=300, backend='agg')
+        plt.savefig(args.outfile, dpi=300, backend='agg')
     else:
         plt.show()
 
