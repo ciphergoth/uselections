@@ -18,11 +18,11 @@
 import argparse
 import codecs
 import csv
-import itertools
 
 import matplotlib.pyplot as plt
 
 import context
+import fec
 
 def get_incumbents():
     incumbents_rev = {
@@ -37,34 +37,9 @@ def get_incumbents():
             incumbents[vv] = k
     return incumbents
 
-def fec_fetch(ctx, url, params):
-    for page in itertools.count(start=1):
-        rp = params.copy()
-        rp['api_key'] = ctx.config['fec']['api_key']
-        rp['per_page'] = "100"
-        rp['page'] = str(page)
-        r = ctx.session.get(url, params=rp)
-        r.raise_for_status()
-        d = r.json()
-        #with open(f"/tmp/fec_{page:03}.json", "w") as f:
-        #    json.dump(d, f, indent=4)
-        yield from d['results']
-        if page >= d['pagination']['pages']:
-            break
-
-def fec_totals(ctx):
-    yield from fec_fetch(ctx, "https://api.open.fec.gov/v1/candidates/totals/", {
-        'has_raised_funds': 'true',
-        'office': 'S',
-        'is_active_candidate': 'true',
-        'election_full': 'true',
-        'election_year': '2020',
-        'sort': 'candidate_id',
-    })
-
 def get_receipts(ctx):
     receipts = {}
-    for d in fec_totals(ctx):
+    for d in fec.totals(ctx):
         if d['party'] == "REP":
             continue
         state = d['state']
