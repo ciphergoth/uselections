@@ -18,17 +18,11 @@
 import argparse
 import codecs
 import csv
-import dataclasses
 import itertools
 
 import matplotlib.pyplot as plt
-import requests_cache
-import toml
 
-@dataclasses.dataclass
-class Context:
-    config: dict
-    session: requests_cache.core.CachedSession
+import context
 
 def get_incumbents():
     incumbents_rev = {
@@ -117,10 +111,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    with open("config.toml") as f:
-        config = toml.load(f)
-    session = requests_cache.core.CachedSession(expire_after=86400)
-    ctx = Context(session = session, config = config)
+    ctx = context.get()
     plot(ctx)
     if args.outfile is not None:
         plt.savefig(args.outfile, dpi=300, backend='agg')
