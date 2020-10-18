@@ -44,18 +44,6 @@ def main():
     import context
 
     ctx = context.get()
-    t = list(c for c in totals(ctx) if c['state'] in ['GA', 'AZ'] and c['party'] != 'REP')
-    t.sort(key=lambda c: c["receipts"], reverse=True)
-    print(json.dumps(t, indent=4))
-    for c in t:
-        print(f"{c['receipts']:12} {c['name']:50}")
-
-
-def main2():
-    import json
-    import context
-
-    ctx = context.get()
     t = list(totals(ctx))
     t.sort(key=lambda c: c["receipts"], reverse=True)
     print(json.dumps(t, indent=4))
