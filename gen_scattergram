@@ -38,12 +38,13 @@ def get_incumbents():
     return incumbents
 
 def get_receipts(ctx):
+    specials = {"KELLY, MARK", "WARNOCK, RAPHAEL"}
     receipts = {}
     for d in fec.totals(ctx):
         if d['party'] == "REP":
             continue
-        state = d['state']
-        receipts[state] = max(receipts.get(state, 0), d['receipts'])
+        district = d['state'] + ("-S3" if d['name'] in specials else "-S2")
+        receipts[district] = max(receipts.get(district, 0), d['receipts'])
     return receipts
 
 def senate_toplines_deluxe(ctx):
@@ -75,9 +76,9 @@ def plot(ctx):
         rprob = float(d['winner_Rparty'])
         if abs(rprob - 0.50) > 0.49:
             continue
-        state = d['district'][:2]
-        ax.text(rprob, receipts[state]/1E6, state,
-            ha="center", va="center", color=incumbents[state])
+        district = d['district']
+        ax.text(rprob, receipts[district]/1E6, district,
+            ha="center", va="center", color=incumbents[district[:2]])
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -92,6 +93,13 @@ def main():
         plt.savefig(args.outfile, dpi=300, backend='agg')
     else:
         plt.show()
+
+def maiin():
+    ctx = context.get()
+    for d in senate_toplines_deluxe(ctx):
+        if d['district'][2:5] != '-S2':
+            print(d)
+
 
 if __name__ == "__main__":
     main()
