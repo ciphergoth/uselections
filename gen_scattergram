@@ -16,50 +16,36 @@
 
 
 import argparse
-import codecs
-import csv
 
 import matplotlib.pyplot as plt
 
 import context
 import fec
+import five38
 
 def get_incumbents():
+    # FIXME
     incumbents_rev = {
-        "red": "ME IA NC MT LA CO GA KS SC AK TX KY MS ID OK SD NE WV AR TN WY",
-        "blue": "AL MI MN NM NH VA IL NJ OR DE MA RI"
+        "red": "",
+        "blue": ""
     }
-    incumbents = {"AZ-S3": "red", "GA-S3": "red"}
+    incumbents = {"OK-S2": "red"}
     for k, v in incumbents_rev.items():
         for vv in v.split():
             if vv in incumbents:
                 raise Exception("ow")
-            incumbents[f"{vv}-S2"] = k
+            incumbents[f"{vv}-S3"] = k
     return incumbents
 
 def get_receipts(ctx):
-    specials = {"KELLY, MARK", "WARNOCK, RAPHAEL"}
+    specials = {"HORN, KENDRA"}
     receipts = {}
     for d in fec.totals(ctx):
         if d['party'] == "REP":
             continue
-        district = d['state'] + ("-S3" if d['name'] in specials else "-S2")
+        district = d['state'] + ("-S2" if d['name'] in specials else "-S3")
         receipts[district] = max(receipts.get(district, 0), d['receipts'])
     return receipts
-
-def senate_toplines_deluxe(ctx):
-    url = "https://projects.fivethirtyeight.com/2020-general-data/senate_state_toplines_2020.csv"
-    with ctx.session.get(url, stream=True) as r:
-        r.raise_for_status()
-        done = set()
-        for d in csv.DictReader(codecs.iterdecode(r.iter_lines(), 'utf-8')):
-            if d['expression'] != '_deluxe':
-                continue
-            district = d['district']
-            if district in done:
-                continue
-            done.add(district)
-            yield d
 
 def plot(ctx):
     incumbents = get_incumbents()
@@ -72,15 +58,15 @@ def plot(ctx):
     ax.set_title("Senate seats, neglectedness and tractability")
     ax.set_xlabel("538 GOP probability (deluxe model)")
     ax.set_ylabel("FEC receipts by top non-GOP candidate ($M)")
-    for d in senate_toplines_deluxe(ctx):
+    for d in five38.senate_toplines_deluxe(ctx):
         rprob = float(d['winner_Rparty'])
         if abs(rprob - 0.50) > 0.49:
             continue
         district = d['district']
-        text = district.replace("-S2", "").replace("-S3", "-S")
+        text = district.replace("-S3", "").replace("-S2", "-S")
         ax.text(rprob, receipts[district]/1E6, text,
-            ha="center", va="center", color=incumbents[district])
-
+            ha="center", va="center", color=incumbents.get(district, 'black'))
+        
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--outfile")

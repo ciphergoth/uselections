@@ -14,5 +14,5 @@
 
 scratch
 __pycache__
-cache.sqlite
+http_cache.sqlite
 config.toml

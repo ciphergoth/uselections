@@ -35,7 +35,7 @@ def totals(ctx):
         'office': 'S',
         'is_active_candidate': 'true',
         'election_full': 'true',
-        'election_year': '2020',
+        'election_year': '2022',
         'sort': 'candidate_id',
     })
 

@@ -20,10 +20,10 @@ import toml
 @dataclasses.dataclass
 class Context:
     config: dict
-    session: requests_cache.core.CachedSession
+    session: requests_cache.CachedSession
 
 def get():
     with open("config.toml") as f:
         config = toml.load(f)
-    session = requests_cache.core.CachedSession(expire_after=86400)
+    session = requests_cache.CachedSession(expire_after=86400)
     return Context(session = session, config = config)
