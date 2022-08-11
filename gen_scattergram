@@ -26,8 +26,8 @@ import five38
 def get_incumbents():
     # FIXME
     incumbents_rev = {
-        "red": "",
-        "blue": ""
+        "red": "AL AK AR FL ID IN IA KS KY LA MO NV NC ND OH OK PA SC SD UT WI",
+        "blue": "AZ CA CO CT GA HI IL MA NH NY OR VT WA"
     }
     incumbents = {"OK-S2": "red"}
     for k, v in incumbents_rev.items():
