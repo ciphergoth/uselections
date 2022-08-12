@@ -24,10 +24,9 @@ import fec
 import five38
 
 def get_incumbents():
-    # FIXME
     incumbents_rev = {
-        "red": "AL AK AR FL ID IN IA KS KY LA MO NV NC ND OH OK PA SC SD UT WI",
-        "blue": "AZ CA CO CT GA HI IL MA NH NY OR VT WA"
+        "red": "AL AK AR FL ID IN IA KS KY LA MO NC ND OH OK PA SC SD UT WI",
+        "blue": "AZ CA CO CT GA HI IL MA NV NH NY OR VT WA"
     }
     incumbents = {"OK-S2": "red"}
     for k, v in incumbents_rev.items():
@@ -66,7 +65,7 @@ def plot(ctx):
         text = district.replace("-S3", "").replace("-S2", "-S")
         ax.text(rprob, receipts[district]/1E6, text,
             ha="center", va="center", color=incumbents.get(district, 'black'))
-        
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--outfile")
