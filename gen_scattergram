@@ -16,6 +16,7 @@
 
 
 import argparse
+import datetime
 
 import matplotlib.pyplot as plt
 
@@ -65,6 +66,8 @@ def plot(ctx):
         text = district.replace("-S3", "").replace("-S2", "-S")
         ax.text(rprob, receipts[district]/1E6, text,
             ha="center", va="center", color=incumbents.get(district, 'black'))
+    plt.figtext(0.02, 0.02, f"@ciphergoth {datetime.date.today().isoformat()}",
+        ha='left', va='bottom', fontsize='small')
 
 def parse_args():
     parser = argparse.ArgumentParser()
