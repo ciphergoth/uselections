@@ -29,24 +29,45 @@ def fetch(ctx, url, params):
         if page >= d['pagination']['pages']:
             break
 
-def totals(ctx):
+def totals(ctx, office):
     yield from fetch(ctx, "https://api.open.fec.gov/v1/candidates/totals/", {
         'has_raised_funds': 'true',
-        'office': 'S',
+        'office': office,
         'is_active_candidate': 'true',
         'election_full': 'true',
         'election_year': '2022',
         'sort': 'candidate_id',
     })
 
+def district(c):
+    d = int(c['district'])
+    if d == 0:
+        d = 1
+    return f"{c['state']}-{d}"
+
+def is_rep(c):
+    return c['party'] == 'REP' or c['candidate_id'] == "H4MT01041"
+
 def main():
     import json
     import context
 
     ctx = context.get()
-    t = list(totals(ctx))
-    t.sort(key=lambda c: c["receipts"], reverse=True)
-    print(json.dumps(t, indent=4))
+    districts = {}
+    for c in totals(ctx, 'H'):
+        district = f"{c['state']}-{c['district']}"
+        districts.setdefault(district, []).append(c)
+    for v in districts.values():
+        v.sort(key=lambda c: c['receipts'], reverse=True)
+        for c in v:
+            if c['party'] != 'REP':
+                if c['party'] not in ['DEM', 'DFL']:
+                    print(json.dumps(c, indent=4))
+                    #print(c['party_full'])
+                break
+    #t = list(totals(ctx, 'H'))
+    #t.sort(key=lambda c: c["receipts"], reverse=True)
+    #print(json.dumps(t, indent=4))
 
 if __name__ == "__main__":
     main()

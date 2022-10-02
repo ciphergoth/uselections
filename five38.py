@@ -15,8 +15,7 @@
 import codecs
 import csv
 
-def senate_toplines_deluxe(ctx):
-    url = "https://projects.fivethirtyeight.com/2022-general-election-forecast-data/senate_state_toplines_2022.csv"
+def toplines_deluxe(ctx, url):
     with ctx.session.get(url, stream=True) as r:
         r.raise_for_status()
         done = set()
@@ -29,12 +28,20 @@ def senate_toplines_deluxe(ctx):
             done.add(district)
             yield d
 
+def senate_toplines_deluxe(ctx):
+    yield from toplines_deluxe(ctx, 
+        "https://projects.fivethirtyeight.com/2022-general-election-forecast-data/senate_state_toplines_2022.csv")
+
+def house_toplines_deluxe(ctx):
+    yield from toplines_deluxe(ctx, 
+        "https://projects.fivethirtyeight.com/2022-general-election-forecast-data/house_district_toplines_2022.csv")
+
 def main():
     import json
     import context
 
     ctx = context.get()
-    t = list(senate_toplines_deluxe(ctx))
+    t = list(house_toplines_deluxe(ctx))
     print(json.dumps(t, indent=4))
 
 if __name__ == "__main__":

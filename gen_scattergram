@@ -40,7 +40,7 @@ def get_incumbents():
 def get_receipts(ctx):
     specials = {"HORN, KENDRA"}
     receipts = {}
-    for d in fec.totals(ctx):
+    for d in fec.totals(ctx, 'S'):
         if d['party'] == "REP":
             continue
         district = d['state'] + ("-S2" if d['name'] in specials else "-S3")
