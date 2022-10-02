@@ -40,10 +40,7 @@ def totals(ctx, office):
     })
 
 def district(c):
-    d = int(c['district'])
-    if d == 0:
-        d = 1
-    return f"{c['state']}-{d}"
+    return f"{c['state']}-{max(1, c['district_number'])}"
 
 def is_rep(c):
     return c['party'] == 'REP' or c['candidate_id'] == "H4MT01041"
@@ -53,21 +50,9 @@ def main():
     import context
 
     ctx = context.get()
-    districts = {}
-    for c in totals(ctx, 'H'):
-        district = f"{c['state']}-{c['district']}"
-        districts.setdefault(district, []).append(c)
-    for v in districts.values():
-        v.sort(key=lambda c: c['receipts'], reverse=True)
-        for c in v:
-            if c['party'] != 'REP':
-                if c['party'] not in ['DEM', 'DFL']:
-                    print(json.dumps(c, indent=4))
-                    #print(c['party_full'])
-                break
-    #t = list(totals(ctx, 'H'))
-    #t.sort(key=lambda c: c["receipts"], reverse=True)
-    #print(json.dumps(t, indent=4))
+    t = list(totals(ctx, 'S'))
+    t.sort(key=lambda c: c["receipts"], reverse=True)
+    print(json.dumps(t, indent=4))
 
 if __name__ == "__main__":
     main()

@@ -38,12 +38,12 @@ def get_incumbents():
     return incumbents
 
 def get_receipts(ctx):
-    specials = {"HORN, KENDRA"}
+    specials = {"S2OK00228"}
     receipts = {}
     for d in fec.totals(ctx, 'S'):
         if d['party'] == "REP":
             continue
-        district = d['state'] + ("-S2" if d['name'] in specials else "-S3")
+        district = d['state'] + ("-S2" if d['candidate_id'] in specials else "-S3")
         receipts[district] = max(receipts.get(district, 0), d['receipts'])
     return receipts
 
