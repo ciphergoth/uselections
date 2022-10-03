@@ -38,17 +38,17 @@ def get_incumbents():
     return incumbents
 
 def get_receipts(ctx):
-    specials = {"S2OK00228"}
     receipts = {}
-    for d in fec.totals(ctx, 'S'):
-        if d['party'] == "REP":
+    for d in fec.totals(ctx, 'H'):
+        if fec.is_rep(d):
             continue
-        district = d['state'] + ("-S2" if d['candidate_id'] in specials else "-S3")
+        district = fec.district(d)
         receipts[district] = max(receipts.get(district, 0), d['receipts'])
     return receipts
 
 def plot(ctx):
-    incumbents = get_incumbents()
+    #incumbents = get_incumbents()
+    incumbents = {}
     receipts = get_receipts(ctx)
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
@@ -58,7 +58,7 @@ def plot(ctx):
     ax.set_title("Senate seats, neglectedness and tractability")
     ax.set_xlabel("538 GOP probability (deluxe model)")
     ax.set_ylabel("FEC receipts by top non-GOP candidate ($M)")
-    for d in five38.senate_toplines_deluxe(ctx):
+    for d in five38.house_toplines_deluxe(ctx):
         rprob = float(d['winner_Rparty'])
         if abs(rprob - 0.50) > 0.49:
             continue
