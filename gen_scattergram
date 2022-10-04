@@ -46,23 +46,25 @@ def get_receipts(ctx):
         receipts[district] = max(receipts.get(district, 0), d['receipts'])
     return receipts
 
-def plot(ctx):
+def plot(ctx, args):
     #incumbents = get_incumbents()
     incumbents = {}
     receipts = get_receipts(ctx)
     fig = plt.figure()
     ax = fig.add_subplot(1,1,1)
     ax.autoscale(False)
-    ax.set_xbound([-0.05, 1.05])
-    ax.set_ybound([0, 1.1 * max(receipts.values())/1E6])
-    ax.set_title("Senate seats, neglectedness and tractability")
+    ax.set_xbound([(1-args.width)/2-0.05, (1+args.width)/2+0.05])
+    ax.set_ybound([0, args.height/1E6])
+    ax.set_title("House seats, neglectedness and tractability")
     ax.set_xlabel("538 GOP probability (deluxe model)")
     ax.set_ylabel("FEC receipts by top non-GOP candidate ($M)")
     for d in five38.house_toplines_deluxe(ctx):
         rprob = float(d['winner_Rparty'])
-        if abs(rprob - 0.50) > 0.49:
+        if abs(rprob*2 - 1) > args.width:
             continue
         district = d['district']
+        if receipts[district] > args.height:
+            continue
         text = district.replace("-S3", "").replace("-S2", "-S")
         ax.text(rprob, receipts[district]/1E6, text,
             ha="center", va="center", color=incumbents.get(district, 'black'))
@@ -72,12 +74,14 @@ def plot(ctx):
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--outfile")
+    parser.add_argument("--width", type=float, default=0.99)
+    parser.add_argument("--height", type=float, default=20E6)
     return parser.parse_args()
 
 def main():
     args = parse_args()
     ctx = context.get()
-    plot(ctx)
+    plot(ctx, args)
     if args.outfile is not None:
         plt.savefig(args.outfile, dpi=300, backend='agg')
     else:
